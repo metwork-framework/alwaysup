@@ -80,7 +80,11 @@ class Cmd:
             if self.options.stdout.lower() in (
                 "null",
                 "pipe",
-            ) and self.options.stderr.lower() in ("null", "stdout", "pipe",):
+            ) and self.options.stderr.lower() in (
+                "null",
+                "stdout",
+                "pipe",
+            ):
                 return StdXxxMethod.NULL
         return StdXxxMethod.LOG_PROXY_WRAPPER
 
@@ -97,8 +101,7 @@ class Cmd:
         tmp = shlex.split(shell_cmd)
         return Cmd(tmp[0], tmp[1:])
 
-    @classmethod
-    def copy_and_add_to_context(self, **to_add: Dict[str, Any]) -> "Cmd":
+    def copy_and_add_to_context(self, to_add: Dict[str, Any]) -> "Cmd":
         new = cast("Cmd", copy.deepcopy(self))
         for key, value in to_add.items():
             new.context[key] = str(value)

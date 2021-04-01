@@ -27,7 +27,7 @@ class ProcessSlot(StateMixin):
         self.slot_number: int = slot_number
         self.name = self.name_prefix + "." + str(self.slot_number)
         self.options = options
-        self.cmd: Cmd = Cmd.copy_and_add_to_context(cmd, {"SLOT", self.slot_number})
+        self.cmd: Cmd = Cmd.copy_and_add_to_context(cmd, {"SLOT": self.slot_number})
         self.logger = mflog.get_logger("alwaysup.process_slot").bind(id=self.name)
         StateMixin.__init__(self, logger=self.logger)
         self.managed_process: Optional[ManagedProcess] = None

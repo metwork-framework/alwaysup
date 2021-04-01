@@ -1,5 +1,6 @@
 from typing import Dict
 from pydantic.dataclasses import dataclass
+from dataclasses import field
 
 
 DEFAULT_STDXXX_ROTATION_SIZE = 104857600
@@ -26,4 +27,4 @@ class Options:
     recursive_sigkill: bool = True
     jinja2: bool = True
     clean_env: bool = False
-    extra_envs: Dict[str, str] = {}
+    extra_envs: Dict[str, str] = field(default_factory=lambda: {})
