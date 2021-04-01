@@ -1,0 +1,10 @@
+-r requirements.txt
+mypy
+flake8
+pytest
+pytest-cov
+black
+bandit
+pytest-asyncio
+pytest-mock
+pylint

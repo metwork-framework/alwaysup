@@ -1,0 +1,81 @@
+{% macro state_to_bs(state) -%}
+{% if state == "RUNNING" %}success{% elif state == "SHUTDOWN" %}dark{% elif state == "SMART_STOPPING" %}danger{% elif state == "STOPPING" %}danger{% elif state == "WAITING_FOR_RESTART" %}warning{% else %}secondary{% endif %}
+{%- endmacro -%}
+{% macro state_to_badge(state, hsince, status) -%}
+<span class="badge badge-{{status_to_bs(status)}}">{{state}} since {{hsince}}</span>
+{%- endmacro -%}
+{% macro status_to_bs(status) -%}
+{% if status == "OK" %}success{% elif status == "NOK" %}danger{% elif status == "WARNING" %}warning{% elif status == "STOPPED" %}dark{% else %}secondary{% endif %}
+{%- endmacro -%}
+
+{% for service in manager.services.values() %}
+<div class="card">
+    <div class="card-header">
+        Service: {{service.name}} {{ state_to_badge(service.state, service.state_hsince, service.status) }}
+{% for action, class, valid_states in [("Start", "btn-success", ["STOPPED"]), ("Stop", "btn-warning", ["RUNNING"]), ("ScaleUp", "btn-info", ["RUNNING"]), ("ScaleDown", "btn-info", ["RUNNING"])] %}
+{% if service.state in valid_states %}
+<button type="button" class="btn {{class}} {{action.lower()}}_service" id="{{action.lower()}}_service_{{service.name}}" alwaysup_service="{{service.name}}" class="btn btn-primary">{{action}} <img id="indicator_{{action.lower()}}_service_{{service.name}}" class="collapse" src="/static/img/loader.gif"/></button>
+        <script type="text/javascript">
+            $('#{{action.lower()}}_service_{{service.name}}').on('click', function (e) {
+                $('#indicator_{{action.lower()}}_service_{{service.name}}').collapse('show')
+                var protocol = window.location.protocol;
+                var host = window.location.host;
+                var service = e.target.attributes.alwaysup_service.value;
+                var url = `${protocol}//${host}/services/${service}/{{action.lower()}}`;
+                console.log(url);
+                $.post(url, function( data ) {
+                    setTimeout(function() {
+                        $('#indicator_{{action.lower()}}_service_{{service.name}}').collapse('hide');
+                    }, 5000);
+                });
+            })
+{% endif %}
+        </script>
+{% endfor %}
+</div>
+{% if service.state not in ['STOPPED'] %}
+    <div class="card-body">
+{% for i, slot in service.slots.items() %}
+        <div class="card">
+            <div class="card-header">
+                Slot: {{i}} {{ state_to_badge(slot.state, slot.state_hsince, slot.status) }}
+{% for action, class, valid_states in [("Start", "btn-success", ["STOPPED"]), ("Stop", "btn-warning", ["RUNNING", "WAITING_FOR_RESTART"]), ("SIGKILL", "btn-danger", ["STOPPING"])] %}
+{% if slot.state in valid_states %}
+                <button type="button" class="btn {{class}} {{action.lower()}}_slot" id="{{action.lower()}}_slot_{{service.name}}_{{i}}" alwaysup_service="{{service.name}}" alwaysup_slot="{{i}}" class="btn btn-primary">{{action}} <img id="indicator_{{action.lower()}}_slot_{{service.name}}_{{i}}" class="collapse" src="/static/img/loader.gif"/></button>
+                <script type="text/javascript">
+                    $('#{{action.lower()}}_slot_{{service.name}}_{{i}}').on('click', function (e) {
+                        $('#indicator_{{action.lower()}}_slot_{{service.name}}_{{i}}').collapse('show')
+                        var protocol = window.location.protocol;
+                        var host = window.location.host;
+                        var service = e.target.attributes.alwaysup_service.value;
+                        var slot = e.target.attributes.alwaysup_slot.value;
+                        var url = `${protocol}//${host}/services/${service}/slots/${slot}/{{action.lower()}}`;
+                        console.log(url);
+                        $.post(url, function( data ) {
+                            setTimeout(function() {
+                                $('#indicator_{{action.lower()}}_slot_{{service.name}}_{{i}}').collapse('hide');
+                            }, 5000);
+                        });
+                    })
+                </script>
+{% endif %}
+{% endfor %}
+            </div>
+{% if slot.pid %}
+            <div class="card-body">
+                <ul>
+                    <li>
+                        cmd_line: <code>{{slot.cmd_line}}</code>
+                    </li>
+                    <li>
+                        pid: <code>{{slot.pid}}</code>
+                    </li>
+                </ul>
+            </div>
+{% endif %}
+        </div>
+{% endfor %}
+    </div>
+{% endif %}
+</div>
+{% endfor %}
