@@ -8,3 +8,4 @@ bandit
 pytest-asyncio
 pytest-mock
 pylint
+pdoc3

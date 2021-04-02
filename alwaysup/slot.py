@@ -6,7 +6,6 @@ from alwaysup.utils import log_exceptions, AsyncMutuallyExclusive
 from alwaysup.state import StateMixin, OnlyStates
 from alwaysup.cmd import Cmd
 from alwaysup.process import ManagedProcess
-from alwaysup.options import Options
 from alwaysup.status import Status
 
 
@@ -20,13 +19,10 @@ class ProcessSlotState(enum.Enum):
 
 
 class ProcessSlot(StateMixin):
-    def __init__(
-        self, name_prefix, slot_number, cmd: Cmd, options: Options = Options()
-    ):
+    def __init__(self, name_prefix, slot_number, cmd: Cmd):
         self.name_prefix = name_prefix
         self.slot_number: int = slot_number
         self.name = self.name_prefix + "." + str(self.slot_number)
-        self.options = options
         self.cmd: Cmd = Cmd.copy_and_add_to_context(cmd, {"SLOT": self.slot_number})
         self.logger = mflog.get_logger("alwaysup.process_slot").bind(id=self.name)
         StateMixin.__init__(self, logger=self.logger)
@@ -91,7 +87,7 @@ class ProcessSlot(StateMixin):
             self.managed_process = None
             if self.state == ProcessSlotState.RUNNING:
                 # self-stop
-                if self.options.autorespawn:
+                if self.cmd.autorespawn:
                     self.set_state(ProcessSlotState.WAITING_FOR_RESTART)
                     self._waiting_for_restart_task = asyncio.create_task(
                         self._waiting_for_restart()
@@ -103,7 +99,7 @@ class ProcessSlot(StateMixin):
                     self.set_state(ProcessSlotState.STOPPED)
 
     async def _waiting_for_restart(self):
-        await asyncio.sleep(self.options.waiting_for_restart_delay)
+        await asyncio.sleep(self.cmd.waiting_for_restart_delay)
 
     @AsyncMutuallyExclusive()
     @OnlyStates([ProcessSlotState.STOPPED, ProcessSlotState.WAITING_FOR_RESTART])

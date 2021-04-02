@@ -17,7 +17,6 @@ from alwaysup.utils import (
     AsyncMutuallyExclusive,
 )
 from alwaysup.cmd import Cmd
-from alwaysup.options import Options
 
 
 class ManagedProcessState(enum.Enum):
@@ -50,10 +49,8 @@ class ManagedProcess(StateMixin):
         self,
         name_prefix: str,
         cmd: Cmd,
-        options: Options = Options(),
     ):
         self.cmd: Cmd = cmd
-        self.options = options
         self.id: str = get_unique_hexa_identifier()[0:10]
         self.name: str = f"{name_prefix}.managed_process.{self.id}"
         self.logger = mflog.get_logger("alwaysup.managed_process").bind(id=self.name)
@@ -137,15 +134,13 @@ class ManagedProcess(StateMixin):
     @NotTheseStatesOrRaise([ManagedProcessState.READY])
     @OnlyStates([ManagedProcessState.RUNNING])
     async def stop(self):
-        smart = self.options.smart_stop
+        smart = self.cmd.smart_stop
         if not smart:
             return await self._non_smart_stop()
         self.logger.info("Smart stopping process...")
         self.set_state(ManagedProcessState.SMART_STOPPING)
-        self._kill(self.options.smart_stop_signal)
-        done, _ = await asyncio.wait(
-            [self.wait()], timeout=self.options.smart_stop_timeout
-        )
+        self._kill(self.cmd.smart_stop_signal)
+        done, _ = await asyncio.wait([self.wait()], timeout=self.cmd.smart_stop_timeout)
         if len(done) != 1:
             self.logger.warning("Timeout of smart stopping => let's kill")
             return await self._non_smart_stop()
@@ -158,7 +153,7 @@ class ManagedProcess(StateMixin):
     def _kill(self, signal: int):
         if self.process is None:
             return
-        if self.options.recursive_sigkill and signal == 9:
+        if self.cmd.recursive_sigkill and signal == 9:
             self.logger.info(
                 "Sending signal %i to %i (and children)" % (signal, self.process.pid)
             )

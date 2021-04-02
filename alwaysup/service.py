@@ -4,13 +4,14 @@ import mflog
 import asyncio
 from alwaysup.state import StateMixin, OnlyStates
 from alwaysup.slot import ProcessSlot
-from alwaysup.options import Options
 from alwaysup.cmd import Cmd
 from alwaysup.utils import AsyncMutuallyExclusive
 from alwaysup.status import Status, list_of_status_to_status
 
 
 class ServiceState(enum.Enum):
+    """Service state enum."""
+
     RUNNING = 1
     STOPPED = 2
     STOPPING = 5
@@ -21,9 +22,7 @@ class ServiceState(enum.Enum):
 
 
 class Service(StateMixin):
-    def __init__(
-        self, name: str, slot_number: int, cmd: Cmd, options: Options = Options()
-    ):
+    def __init__(self, name: str, slot_number: int, cmd: Cmd):
         self.name: str = name
         self.cmd: Cmd = cmd
         self.logger = mflog.get_logger("alwaysup.service").bind(id=self.name)
@@ -31,7 +30,6 @@ class Service(StateMixin):
         self.slots: Dict[int, ProcessSlot] = {}
         self.slot_number: int = slot_number
         self.set_state(ServiceState.STOPPED)
-        self.options = options
 
     @property
     def status(self) -> Status:
@@ -71,7 +69,7 @@ class Service(StateMixin):
 
     @property
     def autostart(self):
-        return self.options.autostart
+        return self.cmd.autostart
 
     @AsyncMutuallyExclusive()
     @OnlyStates([ServiceState.STOPPED])
@@ -84,7 +82,7 @@ class Service(StateMixin):
         self.logger.info("Service started")
 
     async def _start_slot(self, i):
-        slot = ProcessSlot(self.name, i, self.cmd, self.options)
+        slot = ProcessSlot(self.name, i, self.cmd)
         await slot.start()
         self.slots[i] = slot
 

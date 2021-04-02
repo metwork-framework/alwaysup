@@ -13,9 +13,8 @@ from fastapi.staticfiles import StaticFiles
 import uvicorn
 from mfutil.net import ping_tcp_port
 from alwaysup.manager import Manager
-from alwaysup.cmd import Cmd
+from alwaysup.cmd import Cmd, CmdConfiguration
 from alwaysup.service import Service
-from alwaysup.options import Options
 from alwaysup.utils import log_exceptions
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -131,11 +130,9 @@ class ScaleBody(BaseModel):
 
 
 @dataclass(frozen=True)
-class ServiceBody(Options):
+class ServiceBody(CmdConfiguration):
     name: Optional[str] = None
     workers: int = 1
-    program: Optional[str] = None
-    args: Optional[List[str]] = None
 
 
 @app.post("/services/add", status_code=201)
@@ -149,13 +146,9 @@ async def add_service(service_body: ServiceBody = Body(...)):
     manager = get_instance().manager
     if service_body.name in manager.services:
         raise HTTPException(status_code=409, detail="service already exist")
-    options: Options = cast(Options, service_body)
-    cmd = Cmd(
-        service_body.program,
-        service_body.args if service_body.args is not None else [],
-        options,
-    )
-    service = Service(service_body.name, service_body.workers, cmd, options)
+    config: CmdConfiguration = cast(CmdConfiguration, service_body)
+    cmd = Cmd(config)
+    service = Service(service_body.name, service_body.workers, cmd)
     await manager.add_service(service)
     return {"name": service_body.name}
 

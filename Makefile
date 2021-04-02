@@ -22,3 +22,7 @@ black:
 coverage:
 	export PYTHONPATH=".:${PYTHONPATH}"; pytest --cov=alwaysup tests/
 	export PYTHONPATH=".:${PYTHONPATH}"; pytest --cov=alwaysup --cov-report=html tests/
+
+doc:
+	rm -Rf html
+	pdoc3 --force --html alwaysup

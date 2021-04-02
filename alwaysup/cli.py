@@ -1,10 +1,10 @@
+from typing import Dict, Any
 import typer
 import json
 import requests
 from alwaysup.daemon import Daemon, set_instance
 from alwaysup.service import Service
-from alwaysup.cmd import Cmd
-from alwaysup.options import Options
+from alwaysup.cmd import Cmd, CmdConfiguration
 
 app = typer.Typer()
 
@@ -23,8 +23,14 @@ def run_forever(
 ):
     if len(ctx.args) == 0:
         raise Exception("you have to provide a program to execute")
-    options = Options(stdout="PIPE", stderr="PIPE")  # type: ignore
-    cmd = Cmd(ctx.args[0], ctx.args[1:], options)
+    kwargs: Dict[str, Any] = {
+        "program": ctx.args[0],
+        "stdout": "PIPE",
+        "stderr": "PIPE",
+        "args": ctx.args[1:],
+    }
+    config = CmdConfiguration(**kwargs)  # type: ignore
+    cmd = Cmd(config)
     service = Service("forever_cmd", workers, cmd)
     daemon = Daemon(services_to_add=[service], bind_host=bind_host, port=port)
     set_instance(daemon)

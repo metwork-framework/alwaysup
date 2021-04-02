@@ -3,15 +3,15 @@ import os
 import asyncio
 from alwaysup.service import Service
 from alwaysup.cmd import Cmd
-from alwaysup.options import Options
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 @pytest.mark.asyncio
 async def test_basic():
-    options = Options(waiting_for_restart_delay=0)
-    a = Service("foo", 3, Cmd.make_from_shell_cmd("sleep 10"), options)
+    a = Service(
+        "foo", 3, Cmd.make_from_shell_cmd("sleep 10", waiting_for_restart_delay=0)
+    )
     await a.start()
     assert a.is_running()
     a.as_dict()
@@ -23,8 +23,9 @@ async def test_basic():
 
 @pytest.mark.asyncio
 async def test_scaling_up():
-    options = Options(waiting_for_restart_delay=0)
-    a = Service("foo", 3, Cmd.make_from_shell_cmd("sleep 10"), options)
+    a = Service(
+        "foo", 3, Cmd.make_from_shell_cmd("sleep 10", waiting_for_restart_delay=0)
+    )
     await a.start()
     assert a.number_of_slots_running() == 3
     await asyncio.sleep(1)
@@ -37,8 +38,9 @@ async def test_scaling_up():
 
 @pytest.mark.asyncio
 async def test_scaling_down():
-    options = Options(waiting_for_restart_delay=0)
-    a = Service("foo", 3, Cmd.make_from_shell_cmd("sleep 10"), options)
+    a = Service(
+        "foo", 3, Cmd.make_from_shell_cmd("sleep 10", waiting_for_restart_delay=0)
+    )
     await a.start()
     assert a.number_of_slots_running() == 3
     await asyncio.sleep(1)

@@ -10,6 +10,8 @@ from functools import wraps
 
 
 class UnknownState(enum.Enum):
+    """Unknown state."""
+
     UNKNOWN = 0
 
 
